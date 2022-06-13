@@ -1,0 +1,29 @@
+server {
+    listen          80;
+    listen          [::]:80;
+    server_name     {{ app_server_name }};
+
+    access_log      /var/log/nginx/{{ app_name }}-{{ env_name|quote }}_access.log;
+    error_log       /var/log/nginx/{{ app_name }}-{{ env_name|quote }}_error.log;
+
+    client_max_body_size  16m;
+
+    location /api {
+        proxy_pass        http://{{ backend_ip|quote }}:{{ backend_port|quote }};
+
+        proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header  X-Forwarded-Proto $scheme;
+        proxy_set_header  X-Forwarded-Port $server_port;
+        proxy_set_header  Host $host;
+        proxy_set_header  X-Request-ID $request_id;
+
+        access_log      /var/log/nginx/{{ app_name }}-{{ env_name|quote }}-api.log;
+        error_log       /var/log/nginx/{{ app_name }}-{{ env_name|quote }}-api.log;
+    }
+
+    location / {
+        root        {{ deploy_helper.current_path }};
+        try_files   $uri $uri/ /index.html;
+        index       index.html;
+    }
+}

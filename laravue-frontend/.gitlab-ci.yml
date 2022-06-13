@@ -1,0 +1,129 @@
+---
+# CI/CD configuration and jobs
+stages:
+  - build
+  - test
+  - deploy
+
+include:
+  - local: .gitlab/ci/deploy.gitlab-ci.yml
+  - local: .gitlab/ci/nodejs.gitlab-ci.yml
+  - local: .gitlab/ci/unhan-deploy.gitlab-ci.yml
+
+.develop-environment: &develop-environment
+  environment:
+    name: develop
+    url: https://kerma.d.pusilkom.com
+
+.staging-environment: &staging-environment
+  environment:
+    name: staging
+    url: https://kerma.s.pusilkom.com
+
+.production-environment: &production-environment
+  environment:
+    name: production
+    url: https://kerma.idu.ac.id
+
+build-app:dev:
+  extends: .build-app
+  <<: *develop-environment
+  variables:
+    BUILD_MODE: development
+    BACKEND_URL: $DEVELOPMENT_BACKEND_URL
+    FRONTEND_URL: $CI_ENVIRONMENT_URL
+    CLIENT_ID: $DEVELOPMENT_CLIENT_ID
+    SITEKEY: $DEVELOPMENT_SITEKEY
+    SSO_APIKEY: $DEVELOPMENT_SSO_APIKEY
+    SSO_URL: $DEVELOPMENT_SSO_URL
+    CHAT_URL: $DEVELOPMENT_CHAT_URL
+    LOGGING_URL: $DEVELOPMENT_LOGGING_URL
+    USERMANAGEMENT_URL: $DEVELOPMENT_USERMANAGEMENT_URL
+  only:
+    refs:
+      - branches@unhan/sikerjasama/frontend
+      - develop@unhan/sikerjasama/frontend
+  except:
+    refs:
+      - testing@unhan/sikerjasama/frontend
+      - master@unhan/sikerjasama/frontend
+      - production@unhan/sikerjasama/frontend
+
+build-app:staging:
+  extends: .build-app
+  <<: *staging-environment
+  variables:
+    BUILD_MODE: production
+    BACKEND_URL: $STAGING_BACKEND_URL
+    FRONTEND_URL: $CI_ENVIRONMENT_URL
+    CLIENT_ID: $STAGING_CLIENT_ID
+    SITEKEY: $STAGING_SITEKEY
+    SSO_APIKEY: $STAGING_SSO_APIKEY
+    SSO_URL: $STAGING_SSO_URL
+    CHAT_URL: $STAGING_CHAT_URL
+    LOGGING_URL: $STAGING_LOGGING_URL
+    USERMANAGEMENT_URL: $STAGING_USERMANAGEMENT_URL
+  only:
+    refs:
+      - testing@unhan/sikerjasama/frontend
+
+build-app:production:
+  extends: .build-app
+  <<: *production-environment
+  variables:
+    BUILD_MODE: production
+    BACKEND_URL: $PRODUCTION_BACKEND_URL
+    FRONTEND_URL: $CI_ENVIRONMENT_URL
+    CLIENT_ID: $PRODUCTION_CLIENT_ID
+    SITEKEY: $PRODUCTION_SITEKEY
+    SSO_APIKEY: $PRODUCTION_SSO_APIKEY
+    SSO_URL: $PRODUCTION_SSO_URL
+    CHAT_URL: $PRODUCTION_CHAT_URL
+    LOGGING_URL: $PRODUCTION_LOGGING_URL
+    USERMANAGEMENT_URL: $PRODUCTION_USERMANAGEMENT_URL
+  only:
+    refs:
+      - production@unhan/sikerjasama/frontend
+
+deploy-app:dev:
+  extends: .deploy-base
+  <<: *develop-environment
+  variables:
+    BACKEND_IP: $DEVELOPMENT_BACKEND_IP
+    BACKEND_PORT: $DEVELOPMENT_BACKEND_PORT
+    DEPLOYER_PRIVATE_KEY: $DEVELOPMENT_DEPLOYER_PRIVATE_KEY
+    DEPLOYER_USER: $DEVELOPMENT_DEPLOYER_USER
+    ENVIRONMENT_IP: $DEVELOPMENT_ENVIRONMENT_IP
+    ENVIRONMENT_PORT: $DEVELOPMENT_ENVIRONMENT_PORT
+  only:
+    refs:
+      - develop@unhan/sikerjasama/frontend
+
+deploy-app:staging:
+  extends: .deploy-base
+  <<: *staging-environment
+  variables:
+    BACKEND_IP: $STAGING_BACKEND_IP
+    BACKEND_PORT: $STAGING_BACKEND_PORT
+    DEPLOYER_PRIVATE_KEY: $STAGING_DEPLOYER_PRIVATE_KEY
+    DEPLOYER_USER: $STAGING_DEPLOYER_USER
+    ENVIRONMENT_IP: $STAGING_ENVIRONMENT_IP
+    ENVIRONMENT_PORT: $STAGING_ENVIRONMENT_PORT
+  only:
+    refs:
+      - testing@unhan/sikerjasama/frontend
+
+deploy-app:production:
+  extends: .unhan-deploy-base
+  <<: *production-environment
+  variables:
+    BACKEND_IP: $PRODUCTION_BACKEND_IP
+    BACKEND_PORT: $PRODUCTION_BACKEND_PORT
+    DEPLOYER_USER: $PRODUCTION_DEPLOYER_USER
+    ENVIRONMENT_IP: $PRODUCTION_ENVIRONMENT_IP
+    ENVIRONMENT_PORT: $PRODUCTION_ENVIRONMENT_PORT
+    SSH_AUTH_SOCK: $PRODUCTION_AUTH_SOCK
+  only:
+    refs:
+      - production@unhan/sikerjasama/frontend
+  when: manual

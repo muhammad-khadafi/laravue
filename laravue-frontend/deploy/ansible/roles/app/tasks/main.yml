@@ -1,0 +1,45 @@
+---
+- name: Initialise the deploy root and gather facts
+  deploy_helper:
+    path: "{{ app_dir }}/{{ env_name|quote }}"
+    release: "{{ commit_short_sha }}"
+- name: Create the latest release folder
+  file:
+    dest: "{{ deploy_helper.new_release_path }}"
+    state: directory
+- name: Add an unfinished file to allow cleanup on successful finalize
+  file:
+    dest: "{{ deploy_helper.new_release_path }}/{{ deploy_helper.unfinished_filename }}"
+    state: touch
+- name: Copy the application to the release folder
+  synchronize:
+    src: "{{ app_source }}/dist/"
+    dest: "{{ deploy_helper.new_release_path }}/"
+- name: Update file and folder ownership of the application code
+  file:
+    dest: "{{ deploy_helper.new_release_path }}"
+    owner: www-data
+    group: www-data
+    recurse: yes
+    mode: "755"
+- name: Disable default nginx sites configuration
+  file:
+    dest: /etc/nginx/sites-enabled/default
+    state: absent
+- name: Copy nginx site configuration
+  template:
+    src: nginx.conf.j2
+    dest: "/etc/nginx/sites-available/{{ app_name }}-{{ env_name|quote }}.conf"
+    force: yes
+    backup: yes
+- name: Enable nginx site configuration
+  file:
+    src: "/etc/nginx/sites-available/{{ app_name }}-{{ env_name|quote }}.conf"
+    dest: "/etc/nginx/sites-enabled/{{ app_name }}-{{ env_name|quote }}.conf"
+    state: link
+- name: Finalise the deploy
+  deploy_helper:
+    path: "{{ app_dir }}/{{ env_name|quote }}"
+    release: "{{ deploy_helper.new_release }}"
+    state: finalize
+  notify: Reload NGINX

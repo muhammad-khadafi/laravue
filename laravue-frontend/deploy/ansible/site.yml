@@ -1,0 +1,7 @@
+---
+- name: Deploy the project
+  hosts: all
+  roles:
+    - common
+    - app
+  environment: "{{ proxy_env }}"

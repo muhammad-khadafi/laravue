@@ -1,0 +1,7 @@
+---
+- name: Enable NGINX
+  systemd:
+    name: nginx.service
+    enabled: yes
+    no_block: yes
+    state: started

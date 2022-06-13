@@ -1,0 +1,9 @@
+---
+app_dir: /opt/unhan/sikerjasama/frontend
+app_name: unhan-sikerjasama-frontend
+app_server_name: kerma.idu.ac.id
+app_source: "{{ project_dir|quote }}"
+
+proxy_env:
+  http_proxy: ""
+  https_proxy: ""
